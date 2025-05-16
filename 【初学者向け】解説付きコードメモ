@@ -1,0 +1,37 @@
+@echo off
+@rem 「echo off」をしているので、本当は「rem」の前に@はいらない
+
+setlocal
+
+@rem 「ドラッグ＆ドロップ」や「関連付け実行」で渡されたファイル名を %1 で受け取り、変数 file に代入
+@rem %1 はコマンドライン引数の1番目、つまり解凍したいファイルのパス
+set file=%~1
+
+@rem 解凍対象のファイルがあるフォルダに移動
+@rem %~dp1 は %1(ドラッグや関連付けで渡されたファイル)のドライブ名+パス(d→ドライブ　p→パス)という意味
+@rem /dでドライブが違う場合は移動するが、Cドライブならそのまま
+cd /d "%~dp1"
+
+@rem 拡張子を除いたファイル名を取得（= 解凍先フォルダ名）
+set "filename=%~n1"
+
+@rem 解凍先フォルダのパスを作成
+set "output_folder=%~dp1%filename%"
+
+@rem フォルダがなければ作成
+if not exist "%output_folder%" mkdir "%output_folder%"
+
+@rem x は「解凍（階層を維持して展開）」のコマンド
+@rem "%file%" は解凍対象のファイル
+@rem -o"%output_folder%" は「解凍先フォルダのパスに解凍対象のファイルをぶちこむ」という意味
+start "" /b /wait "C:\Program Files\7-Zip\7z.exe" x "%file%" -o"%output_folder%"
+
+@rem 終了後、念のため 7z.exe がまだ動いていないか確認
+@rem 正常に読めてしまう(7zが残っている)場合はタスクキル、読めない(異常終了)時はスルー
+tasklist /fi "imagename eq 7z.exe" | find /i "7z.exe" >nul
+if not errorlevel 1 (
+    echo 残っている 7z.exe を強制終了します...
+    taskkill /f /im 7z.exe >nul
+)
+
+endlocal
